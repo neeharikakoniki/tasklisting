@@ -1,47 +1,46 @@
 import React, { useState } from 'react';
 import { View, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Task } from '../types/Task';
 import { RootStackParamList } from '../../App';
+import { useAddTaskMutation } from '../store/tasksApi';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'AddTask'> & {
-  onAddTask: (task: Task) => void;
-};
+type Props = NativeStackScreenProps<RootStackParamList, 'AddTask'>;
 
-const AddTaskScreen: React.FC<Props> = ({ onAddTask }) => {
+const AddTaskScreen: React.FC<Props> = ({ navigation }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [addTask] = useAddTaskMutation();
 
-  const addTask = () => {
+  const submitTask = async () => {
     if (!title.trim()) {
       Alert.alert('Validation', 'Title is required');
       return;
     }
-    const newTask: Task = {
-      id: Date.now(),
-      title: title.trim(),
-      description: description.trim(),
-      completed: false,
-    };
-    onAddTask(newTask);
+
+    try {
+      await addTask({ title, completed: false, description }).unwrap();
+      navigation.goBack();
+    } catch (e) {
+      Alert.alert('Error', 'Failed to add task');
+    }
   };
 
   return (
     <View style={styles.container}>
       <TextInput
-        placeholder="Task Title (required)"
+        placeholder="Task Title"
         style={styles.input}
         value={title}
         onChangeText={setTitle}
       />
       <TextInput
-        placeholder="Description (optional)"
+        placeholder="Description"
         style={[styles.input, { height: 80 }]}
         value={description}
         onChangeText={setDescription}
         multiline
       />
-      <Button title="Add Task" onPress={addTask} />
+      <Button title="Add Task" onPress={submitTask} />
     </View>
   );
 };
